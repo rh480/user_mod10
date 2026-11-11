@@ -1,5 +1,6 @@
 # tests/conftest.py
 
+import sys
 import subprocess
 import time
 import logging
@@ -81,17 +82,19 @@ def managed_db_session():
 # ======================================================================================
 # Server Startup / Healthcheck
 # ======================================================================================
-def wait_for_server(url: str, timeout: int = 30) -> bool:
+def wait_for_server(url: str, timeout: int = 30, process=None) -> bool:
     """
-    Wait for server to be ready, raising an error if it never becomes available.
+    Wait for server to be ready. Fails fast if the server process dies.
     """
     start_time = time.time()
     while (time.time() - start_time) < timeout:
+        if process is not None and process.poll() is not None:
+            return False  # server process exited
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=3)
             if response.status_code == 200:
                 return True
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             pass
         time.sleep(1)
     return False
@@ -218,21 +221,21 @@ def fastapi_server():
     server_url = 'http://127.0.0.1:8000/'
     logger.info("Starting test server...")
 
+    log_file = open("server.log", "w")
+    process = subprocess.Popen(
+        [sys.executable, 'main.py'],
+        stdout=log_file,
+        stderr=subprocess.STDOUT
+    )
     try:
-        process = subprocess.Popen(
-            ['python', 'main.py'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        if not wait_for_server(server_url, timeout=30):
+        if not wait_for_server(server_url, timeout=30, process=process):
+            log_file.flush()
+            with open("server.log") as f:
+                logger.error("Server log tail:\n" + f.read()[-3000:])
             raise ServerStartupError("Failed to start test server")
 
         logger.info("Test server started successfully.")
         yield  # Run all tests that depend on this fixture
-
-    except Exception as e:
-        logger.error(f"Server error: {str(e)}")
-        raise
     finally:
         logger.info("Terminating test server...")
         process.terminate()
@@ -242,6 +245,7 @@ def fastapi_server():
         except subprocess.TimeoutExpired:
             logger.warning("Test server did not terminate in time; killing it.")
             process.kill()
+        log_file.close()
 
 # ======================================================================================
 # Browser and Page Fixtures (Optional)
