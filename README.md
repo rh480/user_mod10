@@ -1,3 +1,20 @@
+# Module 10
+
+GitHub URL:
+https://github.com/rh480/user_mod10
+
+
+Dockerhub URL: 
+https://hub.docker.com/repository/docker/rh48/601_module10/general
+
+Screenshots:
+
+![GitHub Actions](/Screenshots/Mod10GitHubActions.png)
+
+![DockerHub Tags](/Screenshots/Mod10DockerHubSS.png)
+
+
+
 # 📦 Project Setup
 
 ---
