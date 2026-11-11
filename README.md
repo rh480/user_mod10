@@ -9,7 +9,7 @@ https://hub.docker.com/repository/docker/rh48/601_module10/general
 
 Screenshots:
 
-![GitHub Actions](/Screenshots/Mod10GitHubActions.png)
+![GitHub Actions](/Screenshots/Mod10GitHubActions2.png)
 
 ![DockerHub Tags](/Screenshots/Mod10DockerHubSS.png)
 
