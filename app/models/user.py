@@ -5,14 +5,14 @@ from typing import Optional, Dict, Any
 
 from sqlalchemy import Column, String, DateTime, Boolean
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base, synonym
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from pydantic import ValidationError
 
 from app.schemas.base import UserCreate
-from app.schemas.user import UserResponse, Token
+from app.schemas.user import UserRead, Token
 
 Base = declarative_base()
 
@@ -128,7 +128,7 @@ class User(Base):
         db.commit()
 
         # Create token response using Pydantic models
-        user_response = UserResponse.model_validate(user)
+        user_response = UserRead.model_validate(user)
         token_response = Token(
             access_token=cls.create_access_token({"sub": str(user.id)}),
             token_type="bearer",
