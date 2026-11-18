@@ -194,3 +194,15 @@ def test_missing_password_registration(db_session):
     # Adjust the expected error message
     with pytest.raises(ValueError, match="Password must be at least 6 characters long"):
         User.register(db_session, test_data)
+
+
+def test_password_hash_property_returns_stored_hash():
+    hashed = User.hash_password("TestPass123")
+    user = User(
+        first_name="Ada", last_name="Lovelace",
+        email="ada@example.com", username="ada",
+        password=hashed,
+    )
+    assert user.password_hash == hashed
+    assert user.password_hash != "TestPass123"
+    assert user.verify_password("TestPass123") is True

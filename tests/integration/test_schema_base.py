@@ -1,6 +1,12 @@
 import pytest
 from pydantic import ValidationError
 from app.schemas.base import UserBase, PasswordMixin, UserCreate, UserLogin
+import uuid
+from datetime import datetime
+
+from app.models.user import User
+from app.schemas.user import UserRead
+
 
 
 def test_user_base_valid():
@@ -109,4 +115,22 @@ def test_user_login_invalid_password():
     data = {"username": "johndoe", "password": "short"}
     with pytest.raises(ValidationError):
         UserLogin(**data)
+        
 
+def test_user_read_has_no_password_fields():
+    assert "password" not in UserRead.model_fields
+    assert "password_hash" not in UserRead.model_fields
+
+
+def test_user_read_from_orm_omits_hash():
+    now = datetime.utcnow()
+    user = User(
+        id=uuid.uuid4(), first_name="Alice", last_name="Smith",
+        username="alice", email="alice@example.com",
+        password=User.hash_password("StrongPass123"),
+        is_active=True, is_verified=False,
+        created_at=now, updated_at=now,
+    )
+    data = UserRead.model_validate(user).model_dump()
+    assert "password" not in data
+    assert "password_hash" not in data

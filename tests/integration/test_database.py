@@ -53,3 +53,32 @@ def test_get_sessionmaker(mock_settings):
     engine = database.get_engine()
     SessionLocal = database.get_sessionmaker(engine)
     assert isinstance(SessionLocal, sessionmaker)
+
+
+def test_get_db_yields_session_and_closes_it():
+    """get_db should yield a session and close it when the generator finishes."""
+    database = importlib.import_module("app.database")
+    mock_session = MagicMock()
+
+    with patch.object(database, "SessionLocal", return_value=mock_session):
+        gen = database.get_db()
+        assert next(gen) is mock_session
+        mock_session.close.assert_not_called()
+        with pytest.raises(StopIteration):
+            next(gen)
+
+    mock_session.close.assert_called_once()
+
+
+def test_get_db_closes_session_on_error():
+    """The session must be closed even if the caller raises an exception."""
+    database = importlib.import_module("app.database")
+    mock_session = MagicMock()
+
+    with patch.object(database, "SessionLocal", return_value=mock_session):
+        gen = database.get_db()
+        next(gen)
+        with pytest.raises(RuntimeError):
+            gen.throw(RuntimeError("boom"))
+
+    mock_session.close.assert_called_once()
